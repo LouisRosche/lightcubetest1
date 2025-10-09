@@ -20,41 +20,62 @@
             flex-direction: column;
         }
         #header {
-            background: rgba(20, 20, 20, 0.95);
-            padding: 20px;
+            background: rgba(15, 15, 20, 0.98);
+            padding: 18px 24px;
             border-bottom: 2px solid #333;
-            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.5);
         }
         h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
-            background: linear-gradient(90deg, #ff0000, #00ff00, #0000ff, #ff0000);
+            font-size: 26px;
+            margin-bottom: 6px;
+            background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            font-weight: 800;
         }
         .subtitle {
-            color: #aaa;
-            font-size: 14px;
-            margin-bottom: 12px;
+            color: #999;
+            font-size: 13px;
+            margin-bottom: 10px;
         }
         #info {
-            background: rgba(40, 40, 40, 0.8);
-            padding: 15px;
-            border-radius: 10px;
+            background: rgba(30, 30, 40, 0.9);
+            padding: 14px 18px;
+            border-radius: 12px;
             border: 1px solid #444;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
         .current-color {
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 10px;
+            font-weight: 900;
+            font-size: 24px;
+            margin-bottom: 8px;
             text-align: center;
-            text-shadow: 0 0 10px currentColor;
+            text-shadow: 0 0 30px currentColor, 0 0 60px currentColor;
+            letter-spacing: 1px;
         }
-        .mixing-info {
-            font-size: 12px;
-            color: #bbb;
+        .mixing-formula {
+            font-size: 13px;
             text-align: center;
+            margin-top: 6px;
+            color: #ddd;
+            font-family: 'Courier New', monospace;
+            min-height: 32px;
+        }
+        .component {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 6px;
+            margin: 0 3px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px currentColor;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .surprise-note {
+            font-size: 11px;
+            color: #ffaa00;
+            text-align: center;
+            margin-top: 6px;
             font-style: italic;
         }
         #container {
@@ -62,36 +83,42 @@
             position: relative;
         }
         #footer {
-            background: rgba(20, 20, 20, 0.95);
-            padding: 15px;
+            background: rgba(15, 15, 20, 0.98);
+            padding: 12px 20px;
             border-top: 2px solid #333;
             text-align: center;
-            backdrop-filter: blur(10px);
+            box-shadow: 0 -2px 20px rgba(0,0,0,0.5);
         }
         .footer-content {
-            font-size: 13px;
+            font-size: 12px;
             color: #888;
+            line-height: 1.6;
         }
-        .highlight {
-            color: #0ff;
+        .light-mode {
+            color: #00ffff;
             font-weight: bold;
+        }
+        .pigment-mode {
+            color: #666;
+            text-decoration: line-through;
         }
     </style>
 </head>
 <body>
     <div id="header">
-        <h1>✨ Additive Light Color Mixing</h1>
-        <p class="subtitle">Watch how light waves combine - unlike pigments, lights ADD to create brighter colors!</p>
+        <h1>✨ ADDITIVE LIGHT COLOR MIXING ✨</h1>
+        <p class="subtitle">Watch how light beams combine in surprising ways - totally different from mixing paints!</p>
         <div id="info">
             <div class="current-color" id="colorInfo">Initializing...</div>
-            <div class="mixing-info" id="mixingInfo">Rotating to next combination...</div>
+            <div class="mixing-formula" id="mixingFormula"></div>
+            <div class="surprise-note" id="surpriseNote"></div>
         </div>
     </div>
     <div id="container"></div>
     <div id="footer">
         <div class="footer-content">
-            <span class="highlight">Light (Additive):</span> Red + Green = Yellow, All colors = White | 
-            <span style="color: #666;">Pigments (Subtractive):</span> Yellow + Blue = Green, All colors = Brown
+            <div><span class="light-mode">LIGHT (Additive):</span> Red + Green = Yellow • Red + Blue = Magenta • Green + Blue = Cyan • All Colors = WHITE</div>
+            <div style="margin-top: 4px;"><span class="pigment-mode">PIGMENTS (Subtractive):</span> Red + Green = Brown • Yellow + Blue = Green • All Colors = Muddy Brown</div>
         </div>
     </div>
 
@@ -99,10 +126,12 @@
     <script>
         var container = document.getElementById('container');
         var colorInfo = document.getElementById('colorInfo');
-        var mixingInfo = document.getElementById('mixingInfo');
+        var mixingFormula = document.getElementById('mixingFormula');
+        var surpriseNote = document.getElementById('surpriseNote');
 
         var scene = new THREE.Scene();
         scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.Fog(0x000000, 8, 15);
 
         var camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
         camera.position.set(0, 0, 6);
@@ -112,62 +141,213 @@
         renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(renderer.domElement);
 
+        function mixColors(colors) {
+            var r = 0, g = 0, b = 0;
+            for (var i = 0; i < colors.length; i++) {
+                r += (colors[i] >> 16) & 0xFF;
+                g += (colors[i] >> 8) & 0xFF;
+                b += colors[i] & 0xFF;
+            }
+            r = Math.min(255, r);
+            g = Math.min(255, g);
+            b = Math.min(255, b);
+            return (r << 16) | (g << 8) | b;
+        }
+
+        var R = 0xff0000;
+        var G = 0x00ff00;
+        var B = 0x0000ff;
+
         var vertices = [
-            { color: 0xff0000, name: 'Red', x: -1, y: -1, z: -1 },
-            { color: 0x00ff00, name: 'Green', x: 1, y: -1, z: -1 },
-            { color: 0x0000ff, name: 'Blue', x: 1, y: 1, z: -1 },
-            { color: 0x00ffff, name: 'Cyan', desc: 'Green + Blue', x: -1, y: 1, z: -1 },
-            { color: 0xffff00, name: 'Yellow', desc: 'Red + Green', x: -1, y: -1, z: 1 },
-            { color: 0xff00ff, name: 'Magenta', desc: 'Red + Blue', x: 1, y: -1, z: 1 },
-            { color: 0xffffff, name: 'White', desc: 'Red + Green + Blue', x: 1, y: 1, z: 1 },
-            { color: 0xff8800, name: 'Orange', x: -1, y: 1, z: 1 },
-            { color: 0x666666, name: 'Gray', desc: 'Dimmed White', x: 0, y: 0, z: 0 }
+            { 
+                name: 'RED', 
+                colors: [R],
+                x: -1.4, y: -1.4, z: -1.4,
+                surprise: 'Primary light - pure red wavelength'
+            },
+            { 
+                name: 'GREEN', 
+                colors: [G],
+                x: 1.4, y: -1.4, z: -1.4,
+                surprise: 'Primary light - pure green wavelength'
+            },
+            { 
+                name: 'BLUE', 
+                colors: [B],
+                x: 1.4, y: 1.4, z: -1.4,
+                surprise: 'Primary light - pure blue wavelength'
+            },
+            { 
+                name: 'CYAN', 
+                colors: [G, B],
+                x: -1.4, y: 1.4, z: -1.4,
+                surprise: '🎨 Pigment primary, but in light it\'s Green + Blue!'
+            },
+            { 
+                name: 'YELLOW', 
+                colors: [R, G],
+                x: -1.4, y: -1.4, z: 1.4,
+                surprise: '⚡ SURPRISE! Red + Green = Yellow (not brown like paint!)'
+            },
+            { 
+                name: 'MAGENTA', 
+                colors: [R, B],
+                x: 1.4, y: -1.4, z: 1.4,
+                surprise: '🎨 Pigment primary, but in light it\'s Red + Blue!'
+            },
+            { 
+                name: 'WHITE', 
+                colors: [R, G, B],
+                x: 1.4, y: 1.4, z: 1.4,
+                surprise: '✨ ALL light colors = BRIGHT WHITE (pigments = muddy brown!)'
+            },
+            { 
+                name: 'WARM WHITE', 
+                colors: [R, G, B],
+                x: -1.4, y: 1.4, z: 1.4,
+                surprise: 'Like sunlight - all wavelengths together'
+            },
+            { 
+                name: 'BLACK', 
+                colors: [],
+                x: 0, y: 0, z: 0,
+                surprise: 'Absence of all light - complete darkness'
+            }
         ];
+
+        for (var i = 0; i < vertices.length; i++) {
+            vertices[i].mixedColor = vertices[i].colors.length > 0 ? mixColors(vertices[i].colors) : 0x000000;
+        }
 
         var cubeGroup = new THREE.Group();
         scene.add(cubeGroup);
 
         var centerSphere = new THREE.Mesh(
-            new THREE.SphereGeometry(0.15, 32, 32),
-            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 })
+            new THREE.SphereGeometry(0.65, 32, 32),
+            new THREE.MeshBasicMaterial({ 
+                color: 0xffffff, 
+                transparent: true, 
+                opacity: 0.8,
+                depthWrite: false
+            })
         );
         scene.add(centerSphere);
 
+        var centerGlow1 = new THREE.Mesh(
+            new THREE.SphereGeometry(1.0, 24, 24),
+            new THREE.MeshBasicMaterial({ 
+                color: 0xffffff, 
+                transparent: true, 
+                opacity: 0.3,
+                depthWrite: false
+            })
+        );
+        scene.add(centerGlow1);
+
+        var centerGlow2 = new THREE.Mesh(
+            new THREE.SphereGeometry(1.4, 16, 16),
+            new THREE.MeshBasicMaterial({ 
+                color: 0xffffff, 
+                transparent: true, 
+                opacity: 0.15,
+                depthWrite: false
+            })
+        );
+        scene.add(centerGlow2);
+
         var nodes = [];
+        var lightBeams = [];
         
         for (var i = 0; i < vertices.length; i++) {
             var data = vertices[i];
             
-            var nodeGeo = new THREE.SphereGeometry(0.4, 32, 32);
+            var nodeSize = i === 8 ? 0.25 : 0.42;
+            var nodeGeo = new THREE.SphereGeometry(nodeSize, 32, 32);
             var nodeMat = new THREE.MeshBasicMaterial({ 
-                color: data.color,
+                color: data.mixedColor,
                 transparent: true,
-                opacity: 0.85
+                opacity: i === 8 ? 0.5 : 0.95
             });
             var node = new THREE.Mesh(nodeGeo, nodeMat);
             node.position.set(data.x, data.y, data.z);
-            node.userData = { index: i };
             cubeGroup.add(node);
             nodes.push(node);
 
-            var glowGeo = new THREE.SphereGeometry(0.55, 16, 16);
-            var glowMat = new THREE.MeshBasicMaterial({
-                color: data.color,
-                transparent: true,
-                opacity: 0.25
-            });
-            var glow = new THREE.Mesh(glowGeo, glowMat);
-            node.add(glow);
+            if (i !== 8) {
+                var outerGlow1 = new THREE.Mesh(
+                    new THREE.SphereGeometry(nodeSize * 1.6, 16, 16),
+                    new THREE.MeshBasicMaterial({
+                        color: data.mixedColor,
+                        transparent: true,
+                        opacity: 0.4,
+                        depthWrite: false
+                    })
+                );
+                node.add(outerGlow1);
 
-            var pointLight = new THREE.PointLight(data.color, 3, 8);
+                var outerGlow2 = new THREE.Mesh(
+                    new THREE.SphereGeometry(nodeSize * 2.2, 16, 16),
+                    new THREE.MeshBasicMaterial({
+                        color: data.mixedColor,
+                        transparent: true,
+                        opacity: 0.2,
+                        depthWrite: false
+                    })
+                );
+                node.add(outerGlow2);
+
+                var innerGlow = new THREE.Mesh(
+                    new THREE.SphereGeometry(nodeSize * 1.15, 16, 16),
+                    new THREE.MeshBasicMaterial({
+                        color: data.mixedColor,
+                        transparent: true,
+                        opacity: 0.6,
+                        depthWrite: false
+                    })
+                );
+                node.add(innerGlow);
+            }
+
+            var lightIntensity = i === 8 ? 0.5 : 3.5;
+            var lightDistance = i === 8 ? 3 : 12;
+            var pointLight = new THREE.PointLight(data.mixedColor, lightIntensity, lightDistance);
             pointLight.position.set(data.x, data.y, data.z);
             cubeGroup.add(pointLight);
+
+            if (i !== 8 && data.colors.length > 1) {
+                for (var c = 0; c < data.colors.length; c++) {
+                    var beamGeo = new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8);
+                    var beamMat = new THREE.MeshBasicMaterial({
+                        color: data.colors[c],
+                        transparent: true,
+                        opacity: 0.6,
+                        depthWrite: false
+                    });
+                    var beam = new THREE.Mesh(beamGeo, beamMat);
+                    
+                    var angle = (c / data.colors.length) * Math.PI * 2;
+                    var offsetX = Math.cos(angle) * 0.3;
+                    var offsetZ = Math.sin(angle) * 0.3;
+                    beam.position.set(data.x + offsetX, data.y, data.z + offsetZ);
+                    
+                    var dirX = -data.x - offsetX;
+                    var dirY = -data.y;
+                    var dirZ = -data.z - offsetZ;
+                    var len = Math.sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ);
+                    beam.lookAt(0, 0, 0);
+                    beam.rotateX(Math.PI / 2);
+                    
+                    cubeGroup.add(beam);
+                    lightBeams.push({ mesh: beam, colorIndex: c, parentIndex: i });
+                }
+            }
         }
 
         var edgeMat = new THREE.LineBasicMaterial({ 
-            color: 0x333333, 
+            color: 0x1a1a1a, 
             transparent: true, 
-            opacity: 0.4 
+            opacity: 0.4,
+            linewidth: 2
         });
         
         var edges = [
@@ -190,28 +370,26 @@
         }
 
         var rotationSequence = [
-            { targetVertex: 0, rotation: { x: 0.785, y: -0.785, z: 0 } },
-            { targetVertex: 1, rotation: { x: 0.785, y: 0.785, z: 0 } },
-            { targetVertex: 5, rotation: { x: -0.785, y: 0.785, z: 0 } },
-            { targetVertex: 6, rotation: { x: -0.785, y: -0.785, z: 3.14159 } },
-            { targetVertex: 2, rotation: { x: -0.785, y: 0.785, z: 3.14159 } },
-            { targetVertex: 3, rotation: { x: -0.785, y: -0.785, z: 0 } },
-            { targetVertex: 7, rotation: { x: 0.785, y: -0.785, z: 3.14159 } },
-            { targetVertex: 4, rotation: { x: 0.785, y: 0.785, z: 3.14159 } },
-            { targetVertex: 8, rotation: { x: 0, y: 0, z: 0 } }
+            { vertex: 0, rot: { x: 0.785, y: -0.785, z: 0 } },
+            { vertex: 4, rot: { x: 0.785, y: 0.785, z: 3.14159 } },
+            { vertex: 1, rot: { x: 0.785, y: 0.785, z: 0 } },
+            { vertex: 5, rot: { x: -0.785, y: 0.785, z: 0 } },
+            { vertex: 6, rot: { x: -0.785, y: -0.785, z: 3.14159 } },
+            { vertex: 2, rot: { x: -0.785, y: 0.785, z: 3.14159 } },
+            { vertex: 3, rot: { x: -0.785, y: -0.785, z: 0 } },
+            { vertex: 7, rot: { x: 0.785, y: -0.785, z: 3.14159 } },
+            { vertex: 8, rot: { x: 0, y: 0, z: 0 } }
         ];
 
         var time = 0;
         var transitionDuration = 2.5;
-        var holdDuration = 1.8;
-        var currentRotation = { x: 0.785, y: -0.785, z: 0 };
+        var holdDuration = 2.0;
 
-        function padHex(num) {
-            var hex = num.toString(16);
-            while (hex.length < 6) {
-                hex = '0' + hex;
-            }
-            return hex;
+        function getColorName(hexColor) {
+            if (hexColor === R) return 'Red';
+            if (hexColor === G) return 'Green';
+            if (hexColor === B) return 'Blue';
+            return 'Light';
         }
 
         function shortestRotation(current, target) {
@@ -225,6 +403,12 @@
             return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
         }
 
+        function padHex(num) {
+            var hex = num.toString(16);
+            while (hex.length < 6) hex = '0' + hex;
+            return hex;
+        }
+
         function animate() {
             requestAnimationFrame(animate);
             time += 0.016;
@@ -235,47 +419,75 @@
             var currentIdx = Math.floor(progress);
             var nextIdx = (currentIdx + 1) % rotationSequence.length;
             var segmentProgress = progress - currentIdx;
-
             var holdRatio = holdDuration / (transitionDuration + holdDuration);
             
             var currentStep = rotationSequence[currentIdx];
             var nextStep = rotationSequence[nextIdx];
-            var vertexData = vertices[currentStep.targetVertex];
+            var vertexData = vertices[currentStep.vertex];
             
             if (segmentProgress > holdRatio) {
                 var transitionProgress = (segmentProgress - holdRatio) / (1 - holdRatio);
                 var eased = easeInOutCubic(transitionProgress);
                 
-                var diffX = shortestRotation(currentStep.rotation.x, nextStep.rotation.x);
-                var diffY = shortestRotation(currentStep.rotation.y, nextStep.rotation.y);
-                var diffZ = shortestRotation(currentStep.rotation.z, nextStep.rotation.z);
+                var diffX = shortestRotation(currentStep.rot.x, nextStep.rot.x);
+                var diffY = shortestRotation(currentStep.rot.y, nextStep.rot.y);
+                var diffZ = shortestRotation(currentStep.rot.z, nextStep.rot.z);
                 
-                cubeGroup.rotation.x = currentStep.rotation.x + diffX * eased;
-                cubeGroup.rotation.y = currentStep.rotation.y + diffY * eased;
-                cubeGroup.rotation.z = currentStep.rotation.z + diffZ * eased;
+                cubeGroup.rotation.x = currentStep.rot.x + diffX * eased;
+                cubeGroup.rotation.y = currentStep.rot.y + diffY * eased;
+                cubeGroup.rotation.z = currentStep.rot.z + diffZ * eased;
 
-                var nextVertexData = vertices[nextStep.targetVertex];
-                colorInfo.textContent = vertexData.name + ' → ' + nextVertexData.name;
-                colorInfo.style.color = '#' + padHex(vertexData.color);
-                mixingInfo.textContent = 'Rotating to next combination...';
+                var lerpColor = new THREE.Color(vertexData.mixedColor).lerp(
+                    new THREE.Color(vertices[nextStep.vertex].mixedColor), 
+                    eased
+                );
+                centerSphere.material.color.copy(lerpColor);
+                centerGlow1.material.color.copy(lerpColor);
+                centerGlow2.material.color.copy(lerpColor);
             } else {
-                cubeGroup.rotation.x = currentStep.rotation.x;
-                cubeGroup.rotation.y = currentStep.rotation.y;
-                cubeGroup.rotation.z = currentStep.rotation.z;
+                cubeGroup.rotation.x = currentStep.rot.x;
+                cubeGroup.rotation.y = currentStep.rot.y;
+                cubeGroup.rotation.z = currentStep.rot.z;
                 
-                colorInfo.textContent = vertexData.name;
-                colorInfo.style.color = '#' + padHex(vertexData.color);
-                if (vertexData.desc) {
-                    mixingInfo.textContent = '✨ ' + vertexData.desc;
-                } else {
-                    mixingInfo.textContent = 'Primary light color';
-                }
+                centerSphere.material.color.setHex(vertexData.mixedColor);
+                centerGlow1.material.color.setHex(vertexData.mixedColor);
+                centerGlow2.material.color.setHex(vertexData.mixedColor);
             }
 
-            var pulseScale = 1 + Math.sin(time * 3) * 0.12;
+            colorInfo.textContent = vertexData.name;
+            colorInfo.style.color = '#' + padHex(vertexData.mixedColor);
+
+            var formulaParts = [];
+            for (var c = 0; c < vertexData.colors.length; c++) {
+                var colorHex = vertexData.colors[c];
+                var colorName = getColorName(colorHex);
+                formulaParts.push('<span class="component" style="background: #' + padHex(colorHex) + '; color: white;">' + colorName + '</span>');
+            }
+            
+            if (formulaParts.length === 0) {
+                mixingFormula.innerHTML = '<span style="color: #444; font-weight: bold;">ABSENCE OF LIGHT</span>';
+            } else if (formulaParts.length === 1) {
+                mixingFormula.innerHTML = '<span style="color: #888;">Pure Primary:</span> ' + formulaParts[0];
+            } else {
+                mixingFormula.innerHTML = formulaParts.join(' <span style="color: #0ff; font-weight: bold;">+</span> ') + 
+                    ' <span style="color: #0ff; font-weight: bold;">=</span> <span class="component" style="background: #' + 
+                    padHex(vertexData.mixedColor) + '; color: white; font-size: 110%;">' + vertexData.name + '</span>';
+            }
+
+            surpriseNote.textContent = vertexData.surprise || '';
+
+            var pulseScale = 1 + Math.sin(time * 2.8) * 0.18;
+            var pulse2 = 1 + Math.sin(time * 2.8 + 0.5) * 0.15;
+            var pulse3 = 1 + Math.sin(time * 2.8 + 1.0) * 0.12;
             centerSphere.scale.set(pulseScale, pulseScale, pulseScale);
-            centerSphere.material.color.setHex(vertexData.color);
-            centerSphere.material.opacity = 0.6 + Math.sin(time * 3) * 0.2;
+            centerGlow1.scale.set(pulse2, pulse2, pulse2);
+            centerGlow2.scale.set(pulse3, pulse3, pulse3);
+
+            for (var b = 0; b < lightBeams.length; b++) {
+                var beam = lightBeams[b];
+                var beamPulse = 0.6 + Math.sin(time * 3 + b * 0.3) * 0.3;
+                beam.mesh.material.opacity = beamPulse;
+            }
 
             renderer.render(scene, camera);
         }
