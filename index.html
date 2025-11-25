@@ -81,7 +81,7 @@
     <div id="container"></div>
     <div id="footer">
         <div class="footer-content">
-            LIGHT: Red + Green = Yellow • All Colors = WHITE | PIGMENTS: Red + Green = Brown • All Colors = Muddy Brown
+            LIGHT: Red + Green = Yellow • All Colors = White | PIGMENTS: Red + Green = Brown • All Colors = Muddy Brown
         </div>
     </div>
 
@@ -105,15 +105,14 @@
         var R = 0xff0000, G = 0x00ff00, B = 0x0000ff;
 
         var verts = [
-            { n: 'RED', c: [R], x: -1.4, y: -1.4, z: -1.4, s: 'Primary light - pure red' },
-            { n: 'GREEN', c: [G], x: 1.4, y: -1.4, z: -1.4, s: 'Primary light - pure green' },
-            { n: 'BLUE', c: [B], x: 1.4, y: 1.4, z: -1.4, s: 'Primary light - pure blue' },
-            { n: 'CYAN', c: [G, B], x: -1.4, y: 1.4, z: -1.4, s: 'Green + Blue combined!' },
-            { n: 'YELLOW', c: [R, G], x: -1.4, y: -1.4, z: 1.4, s: 'SURPRISE! Red + Green = Yellow (not brown!)' },
+            { n: 'BLACK', c: [], x: -1.4, y: -1.4, z: -1.4, s: 'Absence of all light' },
+            { n: 'RED', c: [R], x: 1.4, y: -1.4, z: -1.4, s: 'Primary light - pure Red' },
+            { n: 'YELLOW', c: [R, G], x: 1.4, y: 1.4, z: -1.4, s: 'SURPRISE! Red + Green = Yellow (not brown!)' },
+            { n: 'GREEN', c: [G], x: -1.4, y: 1.4, z: -1.4, s: 'Primary light - pure Green' },
+            { n: 'BLUE', c: [B], x: -1.4, y: -1.4, z: 1.4, s: 'Primary light - pure Blue' },
             { n: 'MAGENTA', c: [R, B], x: 1.4, y: -1.4, z: 1.4, s: 'Red + Blue combined!' },
             { n: 'WHITE', c: [R, G, B], x: 1.4, y: 1.4, z: 1.4, s: 'ALL light colors = BRIGHT WHITE!' },
-            { n: 'WARM', c: [R, G, B], x: -1.4, y: 1.4, z: 1.4, s: 'Like sunlight - all wavelengths' },
-            { n: 'BLACK', c: [], x: 0, y: 0, z: 0, s: 'Absence of all light' }
+            { n: 'CYAN', c: [G, B], x: -1.4, y: 1.4, z: 1.4, s: 'Green + Blue combined!' }
         ];
 
         function mix(colors) {
@@ -159,16 +158,16 @@
         
         for (i = 0; i < verts.length; i++) {
             v = verts[i];
-            sz = i === 8 ? 0.25 : 0.42;
+            sz = i === 0 ? 0.25 : 0.42;
             
             geo = new THREE.SphereGeometry(sz, 32, 32);
-            mat = new THREE.MeshBasicMaterial({ color: v.m, transparent: true, opacity: i === 8 ? 0.5 : 0.95 });
+            mat = new THREE.MeshBasicMaterial({ color: v.m, transparent: true, opacity: i === 0 ? 0.5 : 0.95 });
             n = new THREE.Mesh(geo, mat);
             n.position.set(v.x, v.y, v.z);
             cube.add(n);
             nodes.push(n);
 
-            if (i !== 8) {
+            if (i !== 0) {
                 og1 = new THREE.Mesh(
                     new THREE.SphereGeometry(sz * 1.6, 16, 16),
                     new THREE.MeshBasicMaterial({ color: v.m, transparent: true, opacity: 0.4 })
@@ -188,7 +187,7 @@
                 n.add(ig);
             }
 
-            lt = new THREE.PointLight(v.m, i === 8 ? 0.5 : 3.5, i === 8 ? 3 : 12);
+            lt = new THREE.PointLight(v.m, i === 0 ? 0.5 : 3.5, i === 0 ? 3 : 12);
             lt.position.set(v.x, v.y, v.z);
             cube.add(lt);
         }
@@ -208,14 +207,13 @@
 
         var seq = [
             { v: 0, r: { x: 0.785, y: -0.785, z: 0 } },
-            { v: 4, r: { x: 0.785, y: 0.785, z: 3.14159 } },
             { v: 1, r: { x: 0.785, y: 0.785, z: 0 } },
-            { v: 5, r: { x: -0.785, y: 0.785, z: 0 } },
-            { v: 6, r: { x: -0.785, y: -0.785, z: 3.14159 } },
             { v: 2, r: { x: -0.785, y: 0.785, z: 3.14159 } },
             { v: 3, r: { x: -0.785, y: -0.785, z: 0 } },
             { v: 7, r: { x: 0.785, y: -0.785, z: 3.14159 } },
-            { v: 8, r: { x: 0, y: 0, z: 0 } }
+            { v: 4, r: { x: 0.785, y: 0.785, z: 3.14159 } },
+            { v: 5, r: { x: -0.785, y: 0.785, z: 0 } },
+            { v: 6, r: { x: -0.785, y: -0.785, z: 3.14159 } }
         ];
 
         var t = 0;
@@ -289,7 +287,7 @@
             }
 
             colorInfo.textContent = vData.n;
-            colorInfo.style.color = '#' + pad(vData.m);
+            colorInfo.style.color = vData.m === 0 ? '#888888' : '#' + pad(vData.m);
 
             var parts = '';
             for (var c = 0; c < vData.c.length; c++) {
@@ -300,11 +298,12 @@
             }
             
             if (vData.c.length === 0) {
-                mixingFormula.textContent = 'ABSENCE OF LIGHT';
+                mixingFormula.textContent = 'No light';
             } else if (vData.c.length === 1) {
-                mixingFormula.textContent = 'Pure Primary: ' + parts;
+                mixingFormula.textContent = 'Primary: ' + parts;
             } else {
-                mixingFormula.textContent = parts + ' = ' + vData.n;
+                var resultName = vData.n.charAt(0) + vData.n.slice(1).toLowerCase();
+                mixingFormula.textContent = parts + ' = ' + resultName;
             }
 
             surpriseNote.textContent = vData.s || '';
