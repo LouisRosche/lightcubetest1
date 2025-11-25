@@ -298,11 +298,12 @@
             }
             
             if (vData.c.length === 0) {
-                mixingFormula.textContent = 'ABSENCE OF LIGHT';
+                mixingFormula.textContent = 'No light';
             } else if (vData.c.length === 1) {
-                mixingFormula.textContent = 'Pure Primary: ' + parts;
+                mixingFormula.textContent = 'Primary: ' + parts;
             } else {
-                mixingFormula.textContent = parts + ' = ' + vData.n;
+                var resultName = vData.n.charAt(0) + vData.n.slice(1).toLowerCase();
+                mixingFormula.textContent = parts + ' = ' + resultName;
             }
 
             surpriseNote.textContent = vData.s || '';
