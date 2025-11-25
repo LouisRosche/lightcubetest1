@@ -287,7 +287,7 @@
             }
 
             colorInfo.textContent = vData.n;
-            colorInfo.style.color = '#' + pad(vData.m);
+            colorInfo.style.color = vData.m === 0 ? '#888888' : '#' + pad(vData.m);
 
             var parts = '';
             for (var c = 0; c < vData.c.length; c++) {
